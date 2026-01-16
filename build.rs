@@ -231,8 +231,13 @@ fn build_bridge(lib_name: &str, include_dirs: &[PathBuf]) {
 
     b.compile("maplibre_rust_map_renderer_bindings");
 
-    // Link mbgl-core after the bridge - or else `cargo test` won't be able to find the symbols.
-    println!("cargo:rustc-link-lib=static={lib_name}");
+    if target_os == "windows" {
+        // Do not bundle large .lib files into rlib (ICE avoidance)
+        println!("cargo:rustc-link-lib=static:-bundle={lib_name}");
+    } else {
+        // Link mbgl-core after the bridge - or else `cargo test` won't be able to find the symbols.
+        println!("cargo:rustc-link-lib=static={lib_name}");
+    }
 }
 
 fn build_mln() {
@@ -303,6 +308,8 @@ fn build_mln() {
         vcpkg::find_package("libjpeg-turbo").expect("vcpkg: libjpeg-turbo not found");
         // Run `vcpkg install libwebp:x64-windows-static-md` before build
         vcpkg::find_package("libwebp").expect("vcpkg: libwebp not found");
+        // Run `vcpkg install icu:x64-windows-static-md` before build
+        vcpkg::find_package("icu").expect("vcpkg: icu not found");
 
         for lib in ["advapi32", "iphlpapi", "psapi", "shell32", "user32", "userenv", "ws2_32"] {
             println!("cargo:rustc-link-lib={lib}");
