@@ -80,14 +80,20 @@ fn download_static(out_dir: &Path, revision: &str) -> (PathBuf, PathBuf) {
         "amalgam-linux-x64"
     } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
         "amalgam-macos-arm64"
+    } else if cfg!(all(target_os = "windows", target_arch = "x86_64")) {
+        "windows-x64"
     } else {
         panic!(
-            "unsupported target: only linux and macos are currently supported by maplibre-native"
+            "unsupported target: only linux, macos, and windows are currently supported by maplibre-native"
         );
     };
 
     let mut tasks = Vec::new();
-    let lib_filename = format!("libmaplibre-native-core-{target}-{graphics_api}.a");
+    let lib_filename = if target == "windows-x64" {
+        format!("maplibre-native-core-{target}-{graphics_api}.lib")
+    } else {
+        format!("libmaplibre-native-core-{target}-{graphics_api}.a")
+    };
     let library_file = out_dir.join(&lib_filename);
     if !library_file.is_file() {
         let static_url = format!("https://github.com/maplibre/maplibre-native/releases/download/{revision}/{lib_filename}");
@@ -200,11 +206,30 @@ fn build_bridge(lib_name: &str, include_dirs: &[PathBuf]) {
     println!("cargo:rerun-if-changed=src/renderer/bridge.rs");
     println!("cargo:rerun-if-changed=include/map_renderer.h");
     println!("cargo:rerun-if-changed=include/rust_log_observer.h");
-    cxx_build::bridge("src/renderer/bridge.rs")
-        .includes(include_dirs)
+
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+    let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default();
+
+    let mut b = cxx_build::bridge("src/renderer/bridge.rs");
+    b.includes(include_dirs)
         .file("src/renderer/bridge.cpp")
-        .flag_if_supported("-std=c++20")
-        .compile("maplibre_rust_map_renderer_bindings");
+        .define("NOMINMAX", None)
+        .define("WIN32_LEAN_AND_MEAN", None);
+
+    if target_os == "windows" && target_env == "msvc" {
+        b.define("_USE_MATH_DEFINES", None);
+        b.flag_if_supported("/utf-8");
+    }
+
+    if target_env == "msvc" {
+        b.flag_if_supported("/std:c++20")
+            .flag_if_supported("/EHsc")
+            .flag_if_supported("/Zc:__cplusplus");
+    } else {
+        b.flag_if_supported("-std=c++20");
+    }
+
+    b.compile("maplibre_rust_map_renderer_bindings");
 
     // Link mbgl-core after the bridge - or else `cargo test` won't be able to find the symbols.
     println!("cargo:rustc-link-lib=static={lib_name}");
@@ -253,34 +278,58 @@ fn build_mln() {
 
     // These `cargo:rustc-link-lib` must be done before curl and GL,
     // especially on Linux before 1.90 (1.90 introduced new linker on Linux)
-    let lib_name = cpp_root
-        .file_name()
+    let stem = cpp_root
+        .file_stem()
         .expect("static library base has a file name")
         .to_string_lossy()
-        .to_string()
-        .replacen("lib", "", 1)
-        .replace(".a", "");
+        .to_string();
+    let lib_name = stem
+        .strip_prefix("lib")
+        .unwrap_or(&stem)
+        .to_string();
     build_bridge(&lib_name, &include_dirs);
 
-    println!("cargo:rustc-link-lib=curl");
-    println!("cargo:rustc-link-lib=z");
-    match GraphicsRenderingAPI::from_selected_features() {
-        GraphicsRenderingAPI::Vulkan => {}
-        GraphicsRenderingAPI::OpenGL => {
-            println!("cargo:rustc-link-lib=GL");
-            println!("cargo:rustc-link-lib=EGL");
+    if target_os == "windows" {
+        // Run `vcpkg install libuv:x64-windows-static-md` before build
+        vcpkg::find_package("libuv").expect("vcpkg: libuv not found");
+        // Run `vcpkg install curl:x64-windows-static-md` before build
+        vcpkg::find_package("curl").expect("vcpkg: curl not found");
+        vcpkg::find_package("zlib").expect("vcpkg: zlib not found");
+
+        for lib in ["advapi32", "iphlpapi", "psapi", "shell32", "user32", "userenv", "ws2_32"] {
+            println!("cargo:rustc-link-lib={lib}");
         }
-        GraphicsRenderingAPI::Metal => {
-            // macOS Metal framework dependencies
-            println!("cargo:rustc-link-lib=framework=Metal");
-            println!("cargo:rustc-link-lib=framework=MetalKit");
-            println!("cargo:rustc-link-lib=framework=QuartzCore");
-            println!("cargo:rustc-link-lib=framework=Foundation");
-            println!("cargo:rustc-link-lib=framework=CoreGraphics");
-            println!("cargo:rustc-link-lib=framework=AppKit");
-            println!("cargo:rustc-link-lib=framework=CoreLocation");
+        match GraphicsRenderingAPI::from_selected_features() {
+            GraphicsRenderingAPI::OpenGL => {
+                println!("cargo:rustc-link-lib=opengl32");
+            }
+            GraphicsRenderingAPI::Vulkan => {
+                println!("cargo:rustc-link-lib=vulkan-1");
+            }
+            GraphicsRenderingAPI::Metal => {}
+        }
+    } else {
+        println!("cargo:rustc-link-lib=curl");
+        println!("cargo:rustc-link-lib=z");
+        match GraphicsRenderingAPI::from_selected_features() {
+            GraphicsRenderingAPI::Vulkan => {}
+            GraphicsRenderingAPI::OpenGL => {
+                println!("cargo:rustc-link-lib=GL");
+                println!("cargo:rustc-link-lib=EGL");
+            }
+            GraphicsRenderingAPI::Metal => {
+                // macOS Metal framework dependencies
+                println!("cargo:rustc-link-lib=framework=Metal");
+                println!("cargo:rustc-link-lib=framework=MetalKit");
+                println!("cargo:rustc-link-lib=framework=QuartzCore");
+                println!("cargo:rustc-link-lib=framework=Foundation");
+                println!("cargo:rustc-link-lib=framework=CoreGraphics");
+                println!("cargo:rustc-link-lib=framework=AppKit");
+                println!("cargo:rustc-link-lib=framework=CoreLocation");
+            }
         }
     }
+
 }
 
 fn main() {
