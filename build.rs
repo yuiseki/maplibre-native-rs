@@ -309,7 +309,7 @@ fn build_mln() {
         // Run `vcpkg install libwebp:x64-windows-static-md` before build
         vcpkg::find_package("libwebp").expect("vcpkg: libwebp not found");
         // Run `vcpkg install icu:x64-windows-static-md` before build
-        vcpkg::find_package("icu").expect("vcpkg: icu not found");
+        // vcpkg::find_package("icu").expect("vcpkg: icu not found");
 
         for lib in ["advapi32", "iphlpapi", "psapi", "shell32", "user32", "userenv", "ws2_32"] {
             println!("cargo:rustc-link-lib={lib}");
