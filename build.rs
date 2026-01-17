@@ -291,18 +291,18 @@ fn build_mln() {
 
     if target_os == "windows" {
         // Run `vcpkg install libuv:x64-mingw-static` before build
-        vcpkg::find_package("libuv").expect("vcpkg: libuv not found");
+        //vcpkg::find_package("libuv").expect("vcpkg: libuv not found");
         // Run `vcpkg install curl:x64-mingw-static` before build
-        vcpkg::find_package("curl").expect("vcpkg: curl not found");
-        vcpkg::find_package("zlib").expect("vcpkg: zlib not found");
+        //vcpkg::find_package("curl").expect("vcpkg: curl not found");
+        //vcpkg::find_package("zlib").expect("vcpkg: zlib not found");
         // Run `vcpkg install freetype:x64-mingw-static` before build
-        vcpkg::find_package("freetype").expect("vcpkg: freetype not found");
+        //vcpkg::find_package("freetype").expect("vcpkg: freetype not found");
         // Run `vcpkg install harfbuzz:x64-mingw-static` before build
-        vcpkg::find_package("harfbuzz").expect("vcpkg: harfbuzz not found");
+        //vcpkg::find_package("harfbuzz").expect("vcpkg: harfbuzz not found");
         // Run `vcpkg install libjpeg-turbo:x64-mingw-static` before build
-        vcpkg::find_package("libjpeg-turbo").expect("vcpkg: libjpeg-turbo not found");
+        //vcpkg::find_package("libjpeg-turbo").expect("vcpkg: libjpeg-turbo not found");
         // Run `vcpkg install libwebp:x64-mingw-static` before build
-        vcpkg::find_package("libwebp").expect("vcpkg: libwebp not found");
+        //vcpkg::find_package("libwebp").expect("vcpkg: libwebp not found");
         // Run `vcpkg install icu:x64-mingw-static` before build
         // vcpkg::find_package("icu").expect("vcpkg: icu not found");
 
