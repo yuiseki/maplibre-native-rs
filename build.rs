@@ -80,20 +80,14 @@ fn download_static(out_dir: &Path, revision: &str) -> (PathBuf, PathBuf) {
         "amalgam-linux-x64"
     } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
         "amalgam-macos-arm64"
-    } else if cfg!(all(target_os = "windows", target_arch = "x86_64")) {
-        "windows-x64"
     } else {
         panic!(
-            "unsupported target: only linux, macos, and windows are currently supported by maplibre-native"
+            "unsupported target: only linux and macos are currently supported by maplibre-native"
         );
     };
 
     let mut tasks = Vec::new();
-    let lib_filename = if target == "windows-x64" {
-        format!("maplibre-native-core-{target}-{graphics_api}.lib")
-    } else {
-        format!("libmaplibre-native-core-{target}-{graphics_api}.a")
-    };
+    let lib_filename = format!("libmaplibre-native-core-{target}-{graphics_api}.a");
     let library_file = out_dir.join(&lib_filename);
     if !library_file.is_file() {
         let static_url = format!("https://github.com/maplibre/maplibre-native/releases/download/{revision}/{lib_filename}");
