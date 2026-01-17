@@ -1,6 +1,0 @@
-[target.x86_64-pc-windows-msvc]
-linker = "rust-lld"
-
-[env]
-MLN_CORE_LIBRARY_PATH = "C:/Users/yuiseki/Downloads/maplibre-native-core-windows-x64-opengl.lib"
-MLN_CORE_LIBRARY_HEADERS_PATH = "C:/Users/yuiseki/Downloads/maplibre-native-headers.tar.gz"
