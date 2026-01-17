@@ -277,15 +277,13 @@ fn build_mln() {
 
     // These `cargo:rustc-link-lib` must be done before curl and GL,
     // especially on Linux before 1.90 (1.90 introduced new linker on Linux)
-    let stem = cpp_root
-        .file_stem()
+    let lib_name = cpp_root
+        .file_name()
         .expect("static library base has a file name")
         .to_string_lossy()
-        .to_string();
-    let lib_name = stem
-        .strip_prefix("lib")
-        .unwrap_or(&stem)
-        .to_string();
+        .to_string()
+        .replacen("lib", "", 1)
+        .replace(".a", "");
     build_bridge(&lib_name, &include_dirs);
 
     if target_os == "windows" {
