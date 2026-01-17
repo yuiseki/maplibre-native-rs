@@ -210,15 +210,18 @@ fn build_bridge(lib_name: &str, include_dirs: &[PathBuf]) {
         .define("NOMINMAX", None)
         .define("WIN32_LEAN_AND_MEAN", None);
 
-    if target_os == "windows" && (target_env == "msvc" || target_env == "gnu") {
+    if target_os == "windows" && target_env == "msvc" {
         b.define("_USE_MATH_DEFINES", None);
         b.flag_if_supported("/utf-8");
+    } else if target_os == "windows" {
+        b.define("_USE_MATH_DEFINES", None);
     }
 
-    if target_env == "msvc" || target_env == "gnu" {
+    if target_env == "msvc" {
         b.flag_if_supported("/std:c++20")
             .flag_if_supported("/EHsc")
-            .flag_if_supported("/Zc:__cplusplus");
+            .flag_if_supported("/Zc:__cplusplus")
+            .flag_if_supported("/utf-8");
     } else {
         b.flag_if_supported("-std=c++20");
     }
