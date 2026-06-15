@@ -30,7 +30,11 @@ const MLN_COMMIT: &str = "35cf39b72f45cfea55a34ffe7358ade5c950a3c5";
 const BRIDGE_RS: &str = "src/bridge.rs";
 const BRIDGE_CPP_DIR: &str = "src/cpp";
 
-const BRIDGE_INCLUDE_DIRS: &[&str] = &["include", "src/cpp"];
+// `third_party/rapidjson` provides the header-only rapidjson used by
+// mapbox/geojson_impl.hpp, which the bridge compiles to define
+// mapbox::geojson::parse/stringify locally (the precompiled amalgam exports
+// only `mbgl.*` symbols, so those geojson functions are not otherwise linkable).
+const BRIDGE_INCLUDE_DIRS: &[&str] = &["include", "src/cpp", "third_party/rapidjson"];
 
 /// Supported graphics rendering APIs.
 #[derive(PartialEq, Eq, Clone, Copy)]

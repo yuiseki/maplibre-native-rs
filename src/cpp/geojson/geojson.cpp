@@ -1,5 +1,13 @@
 #include "geojson.h"
 
+// The precompiled maplibre-native amalgam is produced with
+// `armerge --keep-symbols 'mbgl.*'`, which localizes every non-mbgl symbol,
+// including mapbox::geojson::parse/stringify. Compile the geojson-cpp
+// implementation here (header form) so this single bridge translation unit
+// provides those definitions for the whole bridge.
+#include <mapbox/geojson_impl.hpp>
+#include <mapbox/geojson_value_impl.hpp>
+
 #include <string>
 #include <utility>
 
