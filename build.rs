@@ -96,7 +96,11 @@ impl std::fmt::Display for GraphicsRenderingAPI {
             Self::Metal => f.write_str("metal"),
             Self::OpenGL => f.write_str("opengl"),
             Self::Vulkan => f.write_str("vulkan"),
-            Self::WGPU => f.write_str("webgpu-wgpu"),
+            // Matches the published amalgam asset suffix
+            // (libmaplibre-native-core-amalgam-linux-x64-wgpu.a). This is
+            // intentionally "wgpu", not the "webgpu-wgpu" cmake preset name; the
+            // released artifact uses "wgpu".
+            Self::WGPU => f.write_str("wgpu"),
         }
     }
 }
@@ -694,7 +698,18 @@ fn build_mln() {
             println!("cargo:rustc-link-lib=framework=AppKit");
             println!("cargo:rustc-link-lib=framework=CoreLocation");
         }
-        GraphicsRenderingAPI::Vulkan | GraphicsRenderingAPI::WGPU => {}
+        GraphicsRenderingAPI::Vulkan => {}
+        GraphicsRenderingAPI::WGPU => {
+            // The published Linux x64 wgpu amalgam was built with the GLX/X11
+            // platform and bundles neither libuv nor the X11/GL system
+            // libraries, so link them when consuming the prebuilt amalgam.
+            // (The from-source WGPU build uses EGL and links these elsewhere.)
+            if amalgam_lib && cfg!(target_os = "linux") {
+                println!("cargo:rustc-link-lib=uv");
+                println!("cargo:rustc-link-lib=GL");
+                println!("cargo:rustc-link-lib=X11");
+            }
+        }
     }
 }
 

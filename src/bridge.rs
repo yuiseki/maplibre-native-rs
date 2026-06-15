@@ -75,8 +75,12 @@ pub mod geojson {
         fn parse(json: &str) -> Result<UniquePtr<GeoJson>>;
         /// Copies a MapLibre Native GeoJSON value.
         fn clone(geojson: &GeoJson) -> UniquePtr<GeoJson>;
-        /// Serializes a MapLibre Native GeoJSON value to a JSON string.
-        fn stringify(geojson: &GeoJson) -> Result<String>;
+        // TEMP(wgpu amalgam): commented out (not deleted) for easy restore.
+        // `mapbox::geojson::stringify` is not exported by the precompiled core
+        // amalgam (armerge keeps only `mbgl.*`). Restore once the public
+        // `mbgl` GeoJSON serializer (maplibre/maplibre-native#4345) ships.
+        // /// Serializes a MapLibre Native GeoJSON value to a JSON string.
+        // fn stringify(geojson: &GeoJson) -> Result<String>;
     }
 }
 
